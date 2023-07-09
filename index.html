@@ -5,9 +5,27 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + TS</title>
+    <!-- <script src="/src/dynamic-xslt.ts"></script> -->
+    <style>
+      li {
+        padding: 20px;
+        border: solid 1px #ccc;
+      }
+    </style>
   </head>
   <body>
+    <h3>list1</h3>
+    <ul>
+      <dxsl-for-each match="/table1">
+        <li>
+          name: <dxsl-value-of key="name"></dxsl-value-of>
+          sex: <dxsl-value-of key="sex"></dxsl-value-of>
+          age: <dxsl-value-of key="age"></dxsl-value-of>
+        </li>
+      </dxsl-for-each>
+    </ul>
     <div id="app"></div>
+    <script src="/src/dynamic-xslt.ts"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
