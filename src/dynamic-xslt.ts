@@ -127,7 +127,7 @@ function extractDataByPath(path: string, data: any) {
 }
 
 
-class DXSLContext extends HTMLElement {
+class DXSLInternalContext extends HTMLElement {
   #basePath: string;
   constructor(basePath: string) {
     super();
@@ -198,7 +198,7 @@ class DXSLForEach extends HTMLElement {
 
     const children = this.#data
       .map((_, i) => {
-        const itemContext = new DXSLContext(`${this.#match!}[${i}]`)
+        const itemContext = new DXSLInternalContext(`${this.#match!}[${i}]`)
         itemContext.appendChild(this.#childFragment!.cloneNode(true));
         return itemContext;
       });
@@ -215,7 +215,7 @@ class DXSLValueOf extends HTMLElement {
   }
 
   get #contextPath(): string | null {
-    const elem = this.closest<DXSLContext>('dxsl-context');
+    const elem = this.closest<DXSLInternalContext>('dxsl-internal-context');
     return elem?.contextPath ?? null;
   }
 
@@ -249,7 +249,8 @@ class DXSLValueOf extends HTMLElement {
   }
 }
 function registerComponents() {
-  customElements.define('dxsl-context', DXSLContext);
+  customElements.define('dxsl-internal-context', DXSLInternalContext);
+
   customElements.define('dxsl-for-each', DXSLForEach);
   customElements.define('dxsl-value-of', DXSLValueOf);
 }
