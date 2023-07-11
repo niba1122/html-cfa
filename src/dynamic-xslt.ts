@@ -198,7 +198,7 @@ class DXSLValueOf extends HTMLElement {
     this.textContent = extractDataByJSExpr(data, this.#contextExprs).$;
   }
 }
-function registerComponents() {
+export function registerComponents() {
   customElements.define('dxsl-internal-context', DXSLInternalContext);
 
   customElements.define('dxsl-for-each', DXSLForEach);
@@ -209,4 +209,4 @@ function registerComponents() {
   document.head.appendChild(styleDOM);
 }
 
-registerComponents();
+// export registerComponents();

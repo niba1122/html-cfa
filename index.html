@@ -5,7 +5,8 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + TS</title>
-    <script src="/src/dynamic-xslt.ts"></script>
+    <!-- <script src="/src/dynamic-xslt.ts"></script> -->
+    <script src="/src/b-attrs.ts"></script>
     <style>
       li {
         padding: 20px;
@@ -23,39 +24,31 @@
   <body>
     <h3>People1</h3>
     <ul>
-      <dxsl-for-each select="$.table2">
-        <li>
-          name: <dxsl-value-of select="$.name"></dxsl-value-of><br>
-          sex: <dxsl-value-of select="$.sex"></dxsl-value-of><br>
-          role:
-          <ul>
-            <dxsl-for-each select="$.roles">
-              <li>
-                <dxsl-value-of select="$"></dxsl-value-of>
-              </li>
-            </dxsl-for-each>
-          </ul>
-        </li>
-      </dxsl-for-each>
+      <li data-b-for-each="$.table2">
+        name: <span data-b-value-of="$.name"></span><br>
+        sex: <span data-b-value-of="$.sex"></span><br>
+        role:
+        <ul>
+          <li data-b-for-each="$.roles">
+            <span data-b-value-of="$"></span>
+          </li>
+        </ul>
+      </li>
     </ul>
     <h3>Fruits</h3>
     <ul>
-      <dxsl-for-each select="$.tableGroup1.fruits">
-        <li>
-          name: <dxsl-value-of select="$.name"></dxsl-value-of>
-        </li>
-      </dxsl-for-each>
+      <li data-b-for-each="$.tableGroup1.fruits">
+        name: <dxsl-value-of select="$.name"></dxsl-value-of>
+      </li>
     </ul>
     <h3>Animals</h3>
     <ul>
-      <dxsl-for-each select="$.tableGroup1.animals">
-        <li>
-          name: <dxsl-value-of select="$.name"></dxsl-value-of>
-        </li>
-      </dxsl-for-each>
+      <li data-b-for-each="$.tableGroup1.animals">
+        name: <dxsl-value-of select="$.name"></dxsl-value-of>
+      </li>
     </ul>
     <div id="app"></div>
     <!-- <script src="/src/dynamic-xslt.ts"></script> -->
-    <script type="module" src="/src/main.ts"></script>
+    <!-- <script type="module" src="/src/main.ts"></script> -->
   </body>
 </html>
