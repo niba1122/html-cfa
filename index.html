@@ -11,16 +11,48 @@
         padding: 20px;
         border: solid 1px #ccc;
       }
+      li.role {
+        display: inline-block;
+        padding: 2px;
+        background-color: #ccc;
+        border-radius: 4px;
+        border: none;
+      }
     </style>
   </head>
   <body>
-    <h3>list1</h3>
+    <h3>People1</h3>
     <ul>
-      <dxsl-for-each match="/table1">
+      <dxsl-for-each select="$.table2">
         <li>
-          name: <dxsl-value-of key="name"></dxsl-value-of>
-          sex: <dxsl-value-of key="sex"></dxsl-value-of>
-          age: <dxsl-value-of key="age"></dxsl-value-of>
+          name: <dxsl-value-of select="$.name"></dxsl-value-of><br>
+          sex: <dxsl-value-of select="$.sex"></dxsl-value-of><br>
+          age: <dxsl-value-of select="$.age"></dxsl-value-of><br>
+          role:
+          <ul>
+            <dxsl-for-each select="$.roles">
+              <li>
+                <!-- <dxsl-value-of select="name"></dxsl-value-of> -->
+                <dxsl-value-of select="$"></dxsl-value-of>
+              </li>
+            </dxsl-for-each>
+          </ul>
+        </li>
+      </dxsl-for-each>
+    </ul>
+    <h3>Fruits</h3>
+    <ul>
+      <dxsl-for-each select="$.tableGroup1.fruits">
+        <li>
+          name: <dxsl-value-of select="$.name"></dxsl-value-of>
+        </li>
+      </dxsl-for-each>
+    </ul>
+    <h3>Animals</h3>
+    <ul>
+      <dxsl-for-each select="$.tableGroup1.animals">
+        <li>
+          name: <dxsl-value-of select="$.name"></dxsl-value-of>
         </li>
       </dxsl-for-each>
     </ul>

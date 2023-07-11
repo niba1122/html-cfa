@@ -7,155 +7,96 @@ const data = {
     { name: 'james', sex: 'male', age: 33 },
   ],
   table2: [
-    { name: 'yamada', sex: 'male', job: 'engineer' },
-    { name: 'suzuki', sex: 'female', job: 'designer' },
-    { name: 'sato', sex: 'male', job: 'sales' },
-    { name: 'tanaka', sex: 'female', job: 'researcher' },
+    { name: 'yamada', sex: 'male', job: 'engineer', roles: ['manager', 'engineer'] },
+    { name: 'suzuki', sex: 'female', job: 'designer', roles: ['head', 'designer'] },
+    { name: 'sato', sex: 'male', job: 'sales', roles: ['sub'] },
+    { name: 'tanaka', sex: 'female', job: 'researcher', roles: [] },
   ],
+  tableGroup1: {
+    fruits: [
+      {
+        name: 'orange',
+      },
+      {
+        name: 'apple',
+      },
+      {
+        name: 'grape',
+      },
+    ],
+    animals: [
+      {
+        name: 'cat',
+      },
+      {
+        name: 'dog',
+      },
+      {
+        name: 'bear',
+      },
+      {
+        name: 'rabbit',
+      },
+    ]
+  },
 }
 
-
-function extractDataByPath(path: string, data: any) {
-  let index = 0;
-
-  const pathArray: (string | number)[] = [];
-
-  function readChildName() {
-    let name = ''
-    while (index < path.length) {
-      const char = path[index];
-      if (/[a-zA-Z0-9_]/.test(char)) {
-        index++;
-        name += char;
-      } else {
-        if (!name) throw new Error(`Invalid string '${char}'.`);
-        pathArray.push(name);
-        return;
-      }
-    }
-    pathArray.push(name);
-  }
-
-  function readAccessor() {
-    {
-      const char = path[index];
-      if (/\[/.test(char)) {
-        index++;
-      } else {
-        throw new Error('`[` expected');
-      }
-    }
-    let numStr = '';
-    while (index < path.length) {
-      const char = path[index];
-      if (/[0-9]/.test(char)) {
-        numStr += char;
-        index++;
-      } else {
-        if (!numStr) throw new Error('Invalid number.');
-        pathArray.push(numStr);
-        break;
-      }
-    }
-    {
-      const char = path[index];
-      if (/\]/.test(char)) {
-        index++;
-      } else {
-        throw new Error('`]` expected');
-      }
-    }
-  }
-
-  function readDivider() {
-    const char = path[index];
-    if (/\//.test(char)) {
-      index++;
-    } else {
-      throw new Error('`/` expected.');
-    }
-  }
-
-  function end() {
-    if (index === path.length) {
-      // noop
-    } else {
-      throw new Error('end expected');
-    }
-  }
-
-
-  try {
-    readDivider();
-  } catch {}
-  while (index < path.length) {
-    readChildName();
-    try {
-      readAccessor();
-    } catch {}
-
-    try {
-      readDivider();
-    } catch {
-      end();
-    }
-  }
-
-  function _extract(data: any, depth: number = 0): any {
-    const path = pathArray[depth];
-    let value: any;
-    if (Array.isArray(data) && typeof path === 'number') {
-      value = data[path];
-    } else if (typeof data === 'object' && typeof path === 'string') {
-      value = data[path];
-    }
-
-    if (Array.isArray(value) || typeof value === 'object') {
-      if (depth < pathArray.length - 1) {
-        return _extract(value, depth + 1);
-      } else {
-        return value;
-      }
-    } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || value == null) {
-      return value;
-    } else {
-      throw new Error('Unexpected value!')
-    }
-  }
-
-  return _extract(data);
+function extractDataByJSExpr(data: any, exprs: string[]): { $: any; $root: any } {
+  // console.log('[debug]func', data, exprs)
+  const root = data;
+  const current = exprs.reduce<any>((current, expr) => {
+    const funcExpr = new Function('$', '$root', `return ${expr};`);
+    return funcExpr(current, root);
+  }, root);
+  return {
+    $: current,
+    $root: root,
+  };
 }
 
 
 class DXSLInternalContext extends HTMLElement {
-  #basePath: string;
-  constructor(basePath: string) {
-    super();
-    this.#basePath = basePath;
-  }
-
-  get contextPath() {
-    return this.#basePath;
+  get contextExprs(): string[] {
+    const elem = this.parentElement?.closest<DXSLInternalContext>('dxsl-internal-context');
+    // console.log('[debug]context element', elem)
+    const prevContextExprs = elem?.contextExprs ?? [];
+    const contextExpr = this.getAttribute('select');
+    if (contextExpr) {
+      return [...prevContextExprs, contextExpr];
+    } else {
+      return prevContextExprs;
+    }
   }
 }
 
 class DXSLForEach extends HTMLElement {
   #observer: MutationObserver;
-  #childFragment: DocumentFragment | null = null;
 
+  get #childTemplate(): HTMLTemplateElement | null {
+    return this.getElementsByTagName('template')[0] ?? null;
+  }
 
-  get #match(): string | null {
-    return this.getAttribute('match');
+  get #select(): string | null {
+    return this.getAttribute('select');
+  }
+
+  get #contextExprs(): string[] {
+    const elem = this.parentElement?.closest<DXSLInternalContext>('dxsl-internal-context');
+    const prevContextExprs = elem?.contextExprs ?? [];
+    const contextExpr = this.getAttribute('select');
+    if (contextExpr) {
+      return [...prevContextExprs, contextExpr];
+    } else {
+      return prevContextExprs;
+    }
   }
 
   get #data(): any[] {
-    const match = this.#match;
-    if (!match) return [];
+    const { $ } = extractDataByJSExpr(data, this.#contextExprs);
+    // console.log('[debug] for-each', this.#contextExprs, $, data);
 
-    const d = extractDataByPath(match, data);
-
-    if (Array.isArray(d)) {
-      return d;
+    if (Array.isArray($)) {
+      return $;
     } else {
       return [];
     }
@@ -165,58 +106,63 @@ class DXSLForEach extends HTMLElement {
     super();
 
     this.#observer = new MutationObserver(() => {
+      // console.log('[debug]observe')
+      // if (this.#childFragment) {
+      //   this.#observer.disconnect();
+      // };
       this.#render();
     });
 
     this.#observer.observe(this, {
       childList: true,
-      subtree: true,
     });
   }
 
   connectedCallback() {
     this.#render();
-    if (this.#childFragment) {
-      this.#observer.disconnect();
-    };
   }
 
   attributeChangedCallback() {
     this.#render();
   }
   static get observedAttributes() {
-    return ['match'];
+    return ['select'];
   }
 
   #render() {
-    if (!this.#childFragment && this.childNodes.length > 0) {
-      const childFragment = document.createDocumentFragment();
-      childFragment.append(...this.childNodes);
-      this.#childFragment = childFragment;
+    if (!this.#select) return;
+    // console.log('[debug]render', this.#childTemplate, this.#data)
+    if (!this.#childTemplate && this.childNodes.length > 0) {
+      const templateDOM = document.createElement('template');
+      templateDOM.innerHTML = this.innerHTML;
+      this.replaceChildren(templateDOM);
+      this.#observer.disconnect();
     }
-    if (!this.#childFragment) return;
+    if (!this.#childTemplate) return;
 
     const children = this.#data
       .map((_, i) => {
-        const itemContext = new DXSLInternalContext(`${this.#match!}[${i}]`)
-        itemContext.appendChild(this.#childFragment!.cloneNode(true));
+        const itemContext = document.createElement('dxsl-internal-context');
+        itemContext.setAttribute('select', `${this.#select}[${i}]`)
+        itemContext.appendChild(this.#childTemplate!.content.cloneNode(true));
         return itemContext;
       });
-
-    this.replaceChildren(...children);
+    this.replaceChildren(this.#childTemplate, ...children);
   }
 }
 
 class DXSLValueOf extends HTMLElement {
   #observer: MutationObserver;
 
-  get #key(): string | null {
-    return this.getAttribute('key');
-  }
-
-  get #contextPath(): string | null {
-    const elem = this.closest<DXSLInternalContext>('dxsl-internal-context');
-    return elem?.contextPath ?? null;
+  get #contextExprs(): string[] {
+    const elem = this.parentElement?.closest<DXSLInternalContext>('dxsl-internal-context');
+    const prevContextExprs = elem?.contextExprs ?? [];
+    const contextExpr = this.getAttribute('select')
+    if (contextExpr) {
+      return [...prevContextExprs, contextExpr];
+    } else {
+      return prevContextExprs;
+    }
   }
 
   constructor() {
@@ -225,27 +171,28 @@ class DXSLValueOf extends HTMLElement {
     this.#observer = new MutationObserver(() => {
       this.#render();
     });
-
-    this.#observer.observe(this, {
-      childList: true,
-      subtree: true,
-    });
   }
 
   connectedCallback() {
     this.#render();
   }
 
-  attributeChangedCallback() {
-    this.#render();
-  }
+  // attributeChangedCallback() {
+  //   this.#render();
+  // }
 
   static get observedAttributes() {
-    return ['key'];
+    return ['select'];
   }
 
   #render() {
-    this.textContent = extractDataByPath(`${this.#contextPath ?? ''}/${this.#key ?? ''}`, data);
+    // console.log('[debug] before value-of', this.#contextExprs)
+    if (!this.#contextExprs) {
+      return;
+    }
+    this.#observer.disconnect();
+    // console.log('[debug] value-of path', this.#contextExprs, data);
+    this.textContent = extractDataByJSExpr(data, this.#contextExprs).$;
   }
 }
 function registerComponents() {
