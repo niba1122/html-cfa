@@ -1,3 +1,19 @@
+// import './style.css';
+
+const STYLE = `
+dxsl-internal-context {
+  display: contents;
+}
+
+dxsl-for-each {
+  display: contents;
+}
+
+dxsl-value-of {
+  display: contents;
+}
+`
+
 const data = {
   table1: [
     { name: 'taro', sex: 'male', age: 28 },
@@ -187,6 +203,10 @@ function registerComponents() {
 
   customElements.define('dxsl-for-each', DXSLForEach);
   customElements.define('dxsl-value-of', DXSLValueOf);
+
+  const styleDOM = document.createElement('style');
+  styleDOM.textContent = STYLE;
+  document.head.appendChild(styleDOM);
 }
 
 registerComponents();
