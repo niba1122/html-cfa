@@ -27,12 +27,10 @@
         <li>
           name: <dxsl-value-of select="$.name"></dxsl-value-of><br>
           sex: <dxsl-value-of select="$.sex"></dxsl-value-of><br>
-          age: <dxsl-value-of select="$.age"></dxsl-value-of><br>
           role:
           <ul>
             <dxsl-for-each select="$.roles">
               <li>
-                <!-- <dxsl-value-of select="name"></dxsl-value-of> -->
                 <dxsl-value-of select="$"></dxsl-value-of>
               </li>
             </dxsl-for-each>
