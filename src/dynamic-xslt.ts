@@ -58,7 +58,6 @@ function extractDataByJSExpr(data: any, exprs: string[]): { $: any; $root: any }
 class DXSLInternalContext extends HTMLElement {
   get contextExprs(): string[] {
     const elem = this.parentElement?.closest<DXSLInternalContext>('dxsl-internal-context');
-    // console.log('[debug]context element', elem)
     const prevContextExprs = elem?.contextExprs ?? [];
     const contextExpr = this.getAttribute('select');
     if (contextExpr) {
@@ -70,8 +69,6 @@ class DXSLInternalContext extends HTMLElement {
 }
 
 class DXSLForEach extends HTMLElement {
-  #observer: MutationObserver;
-
   get #childTemplate(): HTMLTemplateElement | null {
     return this.getElementsByTagName('template')[0] ?? null;
   }
@@ -105,17 +102,9 @@ class DXSLForEach extends HTMLElement {
   constructor() {
     super();
 
-    this.#observer = new MutationObserver(() => {
-      // console.log('[debug]observe')
-      // if (this.#childFragment) {
-      //   this.#observer.disconnect();
-      // };
-      this.#render();
-    });
-
-    this.#observer.observe(this, {
-      childList: true,
-    });
+    if (document.readyState === 'loading' && !this.parentElement?.closest<DXSLInternalContext>('dxsl-internal-context')) {
+      window.requestAnimationFrame(() => this.#render());
+    }
   }
 
   connectedCallback() {
@@ -136,24 +125,24 @@ class DXSLForEach extends HTMLElement {
       const templateDOM = document.createElement('template');
       templateDOM.innerHTML = this.innerHTML;
       this.replaceChildren(templateDOM);
-      this.#observer.disconnect();
     }
     if (!this.#childTemplate) return;
 
-    const children = this.#data
+    const itemContexts = this.#data
       .map((_, i) => {
         const itemContext = document.createElement('dxsl-internal-context');
         itemContext.setAttribute('select', `${this.#select}[${i}]`)
-        itemContext.appendChild(this.#childTemplate!.content.cloneNode(true));
         return itemContext;
       });
-    this.replaceChildren(this.#childTemplate, ...children);
+    this.replaceChildren(this.#childTemplate, ...itemContexts);
+    // connectedcallbackを正しく発火させるために、contextを先に追加してから各要素を追加する
+    itemContexts.forEach(itemContext => {
+      itemContext.appendChild(this.#childTemplate!.content.cloneNode(true));
+    })
   }
 }
 
 class DXSLValueOf extends HTMLElement {
-  #observer: MutationObserver;
-
   get #contextExprs(): string[] {
     const elem = this.parentElement?.closest<DXSLInternalContext>('dxsl-internal-context');
     const prevContextExprs = elem?.contextExprs ?? [];
@@ -167,10 +156,9 @@ class DXSLValueOf extends HTMLElement {
 
   constructor() {
     super();
-
-    this.#observer = new MutationObserver(() => {
-      this.#render();
-    });
+    if (document.readyState === 'loading' && !this.parentElement?.closest<DXSLInternalContext>('dxsl-internal-context')) {
+      window.requestAnimationFrame(() => this.#render());
+    }
   }
 
   connectedCallback() {
@@ -190,7 +178,6 @@ class DXSLValueOf extends HTMLElement {
     if (!this.#contextExprs) {
       return;
     }
-    this.#observer.disconnect();
     // console.log('[debug] value-of path', this.#contextExprs, data);
     this.textContent = extractDataByJSExpr(data, this.#contextExprs).$;
   }

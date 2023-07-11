@@ -8,7 +8,14 @@ document.getElementById('app')!.innerHTML = `
         name: <dxsl-value-of select="$.name"></dxsl-value-of>
         sex: <dxsl-value-of select="$.sex"></dxsl-value-of>
         job: <dxsl-value-of select="$.job"></dxsl-value-of>
-        roles: <dxsl-value-of select="$.roles"></dxsl-value-of>
+        roles:
+          <ul>
+            <dxsl-for-each select="$.roles">
+              <li>
+                <dxsl-value-of select="$"></dxsl-value-of>
+              </li>
+            </dxsl-for-each>
+          </ul>
       </li>
     </dxsl-for-each>
   </ul>
