@@ -60,13 +60,13 @@ function extractDataByJSExpr(data: any, exprs: string[]): { $: any; $root: any }
   };
 }
 
-const ATTR_FOR_EACH = 'data-b-for-each';
-const ATTR_FOR_EACH_CLONED = 'data-b-for-each-cloned';
-const ATTR_FOR_EACH_INDEX = 'data-b-for-each-index';
-const ATTR_VALUE_OF = 'data-b-value-of';
+const ATTR_FOR = 'data-b-for';
+const ATTR_FOR__CLONE = 'data-b-for_clone';
+const ATTR_FOR__INDEX = 'data-b-for_index';
+const ATTR_CONTENT = 'data-b-content';
 const ATTR_ATTR_VALUES = 'data-b-attr-values';
 const ATTR_IF = 'data-b-if';
-const ATTR_IF_HIDDEN = 'data-b-if-hidden';
+const ATTR_IF__HIDDEN = 'data-b-if_hidden';
 
 function is(element: Element, attr: string) {
   return element.getAttribute(attr) !== null;
@@ -78,15 +78,15 @@ function toSelector(attrs: string[]): string {
 
 function getContextExprs(element: Element): string[] {
   function _get(_element: Element): string[] {
-    const next = _element.parentElement?.closest<HTMLElement>(toSelector([ATTR_FOR_EACH, ATTR_FOR_EACH_CLONED]));
+    const next = _element.parentElement?.closest<HTMLElement>(toSelector([ATTR_FOR, ATTR_FOR__CLONE]));
     if (next) {
       let contextExpr: string | undefined;
-      if (is(next, ATTR_FOR_EACH)) {
-        const base = next.getAttribute(ATTR_FOR_EACH) ?? '';
+      if (is(next, ATTR_FOR)) {
+        const base = next.getAttribute(ATTR_FOR) ?? '';
         contextExpr = `${base}[0]`;
-      } else if (is(next, ATTR_FOR_EACH_CLONED)) {
-        const base = next.getAttribute(ATTR_FOR_EACH_CLONED) ?? '';
-        const index = Number(next.getAttribute(ATTR_FOR_EACH_INDEX));
+      } else if (is(next, ATTR_FOR__CLONE)) {
+        const base = next.getAttribute(ATTR_FOR__CLONE) ?? '';
+        const index = Number(next.getAttribute(ATTR_FOR__INDEX));
         contextExpr = `${base}[${index}]`;
       }
       if (contextExpr) {
@@ -99,12 +99,12 @@ function getContextExprs(element: Element): string[] {
 }
 
 function render(root: Element) {
-  [...root.querySelectorAll(toSelector([ATTR_FOR_EACH_CLONED]))].forEach((element) => element.remove());
+  [...root.querySelectorAll(toSelector([ATTR_FOR__CLONE]))].forEach((element) => element.remove());
   let createdElements: Element[] = [];
-  [...root.querySelectorAll<HTMLElement>(toSelector([ATTR_VALUE_OF, ATTR_FOR_EACH, ATTR_FOR_EACH_CLONED, ATTR_ATTR_VALUES, ATTR_IF]))]
+  [...root.querySelectorAll<HTMLElement>(toSelector([ATTR_CONTENT, ATTR_FOR, ATTR_FOR__CLONE, ATTR_ATTR_VALUES, ATTR_IF]))]
     .forEach((element) => {
-      if (is(element, ATTR_VALUE_OF)) {
-        const expr = element.getAttribute(ATTR_VALUE_OF) ?? '';
+      if (is(element, ATTR_CONTENT)) {
+        const expr = element.getAttribute(ATTR_CONTENT) ?? '';
         const contextExprs = getContextExprs(element);
         element.textContent = extractDataByJSExpr(data, [...contextExprs, expr]).$;
       } else if (is(element, ATTR_ATTR_VALUES)) {
@@ -122,13 +122,13 @@ function render(root: Element) {
         const contextExprs = getContextExprs(element);
         const result = !!extractDataByJSExpr(data, [...contextExprs, expr]).$;
         if (result) {
-          element.removeAttribute(ATTR_IF_HIDDEN);
+          element.removeAttribute(ATTR_IF__HIDDEN);
         } else {
-          element.setAttribute(ATTR_IF_HIDDEN, '');
+          element.setAttribute(ATTR_IF__HIDDEN, '');
         }
-      } else if (is(element, ATTR_FOR_EACH)) {
+      } else if (is(element, ATTR_FOR)) {
         const contextExprs = getContextExprs(element);
-        const expr = element.getAttribute(ATTR_FOR_EACH) ?? '';
+        const expr = element.getAttribute(ATTR_FOR) ?? '';
         const d = extractDataByJSExpr(data, [...contextExprs, expr]).$;
 
         const copiedElements = [...Array.isArray(d) ? d : []]
@@ -136,9 +136,9 @@ function render(root: Element) {
           .slice(1)
           .map(i => {
             const copiedElement = element.cloneNode(true) as HTMLElement;
-            copiedElement.setAttribute(ATTR_FOR_EACH_CLONED, copiedElement.getAttribute(ATTR_FOR_EACH) ?? '')
-            copiedElement.removeAttribute(ATTR_FOR_EACH);
-            copiedElement.setAttribute(ATTR_FOR_EACH_INDEX, `${i}`);
+            copiedElement.setAttribute(ATTR_FOR__CLONE, copiedElement.getAttribute(ATTR_FOR) ?? '')
+            copiedElement.removeAttribute(ATTR_FOR);
+            copiedElement.setAttribute(ATTR_FOR__INDEX, `${i}`);
             return copiedElement;
           });
 
@@ -156,3 +156,12 @@ function render(root: Element) {
 window.addEventListener('DOMContentLoaded', () => {
   render(document.body);
 });
+
+window.addEventListener('load', () => {
+  render(document.body);
+});
+
+setTimeout(() => {
+  data.table2 = [...data.table2, ...data.table2];
+  render(document.body);
+}, 2000);

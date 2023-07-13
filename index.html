@@ -8,7 +8,7 @@
     <!-- <script src="/src/dynamic-xslt.ts"></script> -->
     <script src="/src/b-attrs.ts"></script>
     <style>
-      [data-b-if-hidden] {
+      [data-b-if_hidden] {
         display: none;
       }
 
@@ -28,39 +28,39 @@
   <body>
     <h3>People1</h3>
     <ul>
-      <li data-b-for-each="$.table2">
-        name: <span data-b-value-of="$.name"></span><br>
-        sex: <span data-b-value-of="$.sex"></span><br>
+      <li data-b-for="$.table2">
+        name: <span data-b-content="$.name"></span><br>
+        sex: <span data-b-content="$.sex"></span><br>
         role:
         <ul>
-          <li data-b-for-each="$.roles">
-            <span data-b-value-of="$"></span>
+          <li data-b-for="$.roles">
+            <span data-b-content="$"></span>
           </li>
         </ul>
       </li>
     </ul>
     <h3>
       <ul style="display: flex">
-        <li style="width: 20%; list-style: none; display: flex; flex-direction: column;" data-b-for-each="$.table3">
+        <li style="width: 20%; list-style: none; display: flex; flex-direction: column;" data-b-for="$.table3">
           <img style="width: 100%" data-b-attr-values="{ src: $.imageUrl, alt: $.name }">
-          <span style="text-align: center" data-b-value-of="$.name"></span>
+          <span style="text-align: center" data-b-content="$.name"></span>
         </li>
       </ul>
     </h3>
     <h3>Fruits</h3>
     <ul data-b-if="$.tableGroup1.fruits.length > 2">
-      <li data-b-for-each="$.tableGroup1.fruits">
-        name: <span data-b-value-of="$.name"></span>
+      <li data-b-for="$.tableGroup1.fruits">
+        name: <span data-b-content="$.name"></span>
       </li>
     </ul>
     <h3>Animals</h3>
     <ul>
-      <li data-b-for-each="$.tableGroup1.animals">
-        name: <span data-b-value-of="$.name"></span>
+      <li data-b-for="$.tableGroup1.animals">
+        name: <span data-b-content="$.name"></span>
       </li>
     </ul>
     <div id="app"></div>
     <!-- <script src="/src/dynamic-xslt.ts"></script> -->
-    <!-- <script type="module" src="/src/main.ts"></script> -->
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
