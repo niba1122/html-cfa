@@ -12,6 +12,13 @@ const data = {
     { name: 'sato', sex: 'male', job: 'sales', roles: ['sub'] },
     { name: 'tanaka', sex: 'female', job: 'researcher', roles: [] },
   ],
+  table3: [
+    { name: 'a', imageUrl: 'https://cdn.goope.jp/45227/161123133219uvsp_l.jpg' },
+    { name: 'b', imageUrl: 'https://cdn.goope.jp/45227/161123133242xhrd_l.jpg' },
+    { name: 'c', imageUrl: 'https://cdn.goope.jp/45227/161123133257tc3t_l.jpg' },
+    { name: 'd', imageUrl: 'https://cdn.goope.jp/45227/161123133322kjgc_l.jpg' },
+    { name: 'e', imageUrl: 'https://cdn.goope.jp/45227/161123133340ta2s_l.jpg' },
+  ],
   tableGroup1: {
     fruits: [
       {
@@ -57,6 +64,7 @@ const ATTR_FOR_EACH = 'data-b-for-each';
 const ATTR_FOR_EACH_CLONED = 'data-b-for-each-cloned';
 const ATTR_FOR_EACH_INDEX = 'data-b-for-each-index';
 const ATTR_VALUE_OF = 'data-b-value-of';
+const ATTR_ATTR_VALUES = 'data-b-attr-values';
 
 function is(element: Element, attr: string) {
   return element.getAttribute(attr) !== null;
@@ -90,12 +98,23 @@ function getContextExprs(element: Element): string[] {
 
 function render(root: Element) {
   [...root.querySelectorAll(toSelector([ATTR_FOR_EACH_CLONED]))].forEach((element) => element.remove());
-  [...root.querySelectorAll<HTMLElement>(toSelector([ATTR_VALUE_OF, ATTR_FOR_EACH, ATTR_FOR_EACH_CLONED]))]
+  let createdElements: Element[] = [];
+  [...root.querySelectorAll<HTMLElement>(toSelector([ATTR_VALUE_OF, ATTR_FOR_EACH, ATTR_FOR_EACH_CLONED, ATTR_ATTR_VALUES]))]
     .forEach((element) => {
       if (is(element, ATTR_VALUE_OF)) {
         const expr = element.getAttribute(ATTR_VALUE_OF) ?? '';
         const contextExprs = getContextExprs(element);
         element.textContent = extractDataByJSExpr(data, [...contextExprs, expr]).$;
+      } else if (is(element, ATTR_ATTR_VALUES)) {
+        const expr = element.getAttribute(ATTR_ATTR_VALUES) ?? '';
+        const contextExprs = getContextExprs(element);
+        const attrValues = extractDataByJSExpr(data, [...contextExprs, expr]).$;
+        if (typeof attrValues === 'object' && !Array.isArray(attrValues)) {
+          Object.entries(attrValues as Record<string, any>)
+            .forEach(([attr, value]) => {
+              element.setAttribute(attr, value);
+            });
+        }
       } else if (is(element, ATTR_FOR_EACH)) {
         const contextExprs = getContextExprs(element);
         const expr = element.getAttribute(ATTR_FOR_EACH) ?? '';
@@ -117,9 +136,10 @@ function render(root: Element) {
           element.parentElement?.insertBefore(copiedElement, base.nextSibling);
         });
 
-        copiedElements.forEach(copied => render(copied));
+        createdElements = [...createdElements, ...copiedElements];
       }
     });
+  createdElements.forEach(element => render(element));
 }
 
 window.addEventListener('DOMContentLoaded', () => {

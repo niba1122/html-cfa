@@ -35,6 +35,14 @@
         </ul>
       </li>
     </ul>
+    <h3>
+      <ul style="display: flex">
+        <li style="width: 20%; list-style: none; display: flex; flex-direction: column;" data-b-for-each="$.table3">
+          <img style="width: 100%" data-b-attr-values="{ src: $.imageUrl, alt: $.name }">
+          <span style="text-align: center" data-b-value-of="$.name"></span>
+        </li>
+      </ul>
+    </h3>
     <h3>Fruits</h3>
     <ul>
       <li data-b-for-each="$.tableGroup1.fruits">
