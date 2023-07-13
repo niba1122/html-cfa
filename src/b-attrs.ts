@@ -42,7 +42,6 @@ const data = {
 }
 
 function extractDataByJSExpr(data: any, exprs: string[]): { $: any; $root: any } {
-  // console.log('[debug]func', data, exprs)
   const root = data;
   const current = exprs.reduce<any>((current, expr) => {
     const funcExpr = new Function('$', '$root', `return ${expr};`);
@@ -55,10 +54,19 @@ function extractDataByJSExpr(data: any, exprs: string[]): { $: any; $root: any }
 }
 
 function getContextExprs(element: Element): string[] {
-  function _get(element: Element): string[] {
-    const next = element.parentElement?.closest('[data-b-context]');
-    if (next instanceof HTMLElement) {
-      const contextExpr = next.dataset.bContext;
+  function _get(_element: Element): string[] {
+    const next = _element.parentElement?.closest<HTMLElement>('[data-b-for-each], [data-b-for-each-cloned]');
+    if (next) {
+      let contextExpr: string | undefined;
+      if (typeof next.dataset.bForEach === 'string') {
+        const base = next.dataset.bForEach;
+        // const index = Number(next.getAttribute('data-b-index'));
+        contextExpr = `${base}[0]`;
+      } else if (typeof next.dataset.bForEachCloned === 'string') {
+        const base = next.dataset.bForEachCloned;
+        const index = Number(next.getAttribute('data-b-index'));
+        contextExpr = `${base}[${index}]`;
+      }
       if (contextExpr) {
         return [..._get(next), contextExpr];
       }
@@ -69,38 +77,42 @@ function getContextExprs(element: Element): string[] {
 }
 
 function render(root: Element) {
-  Array.from(root.querySelectorAll('[data-b-value-of]')).map((element) => {
-    if (!(element instanceof HTMLElement)) return;
-    const expr = element.dataset.bValueOf ?? '';
-    const contextExprs = getContextExprs(element);
-    element.textContent = extractDataByJSExpr(data, [...contextExprs, expr]).$;
-  });
+  [...root.querySelectorAll('[data-b-for-each-cloned]')].forEach((element) => element.remove());
+  [...root.querySelectorAll<HTMLElement>('[data-b-value-of], [data-b-for-each], [data-b-for-each-cloned]')]
+    .forEach((element) => {
+      if (element.dataset.bValueOf !== undefined) {
+        const expr = element.dataset.bValueOf ?? '';
+        const contextExprs = getContextExprs(element);
+        try {
+          element.textContent = extractDataByJSExpr(data, [...contextExprs, expr]).$;
+        } catch {
 
-  Array.from(root.querySelectorAll('[data-b-for-each]')).map((element) => {
-    if (!(element instanceof HTMLElement)) return;
+        }
+      } else if (element.dataset.bForEach !== undefined) {
+        const contextExprs = getContextExprs(element);
+        const expr = element.dataset.bForEach ?? '';
 
-    const contextExprs = getContextExprs(element);
-    const expr = element.dataset.bForEach ?? '';
-    delete element.dataset.bForEach;
+        const d = extractDataByJSExpr(data, [...contextExprs, expr]).$;
 
-    const templateElement = document.createElement('template');
-    templateElement.innerHTML = element.outerHTML;
+        const copiedElements = [...Array.isArray(d) ? d : []]
+          .map((_, i) => i)
+          .slice(1)
+          .map(i => {
+            const copiedElement = element.cloneNode(true) as HTMLElement;
+            copiedElement.setAttribute('data-b-for-each-cloned', copiedElement.dataset.bForEach ?? '')
+            delete copiedElement.dataset.bForEach;
+            copiedElement.setAttribute('data-b-index', `${i}`);
+            return copiedElement;
+          });
 
-    const d = extractDataByJSExpr(data, [...contextExprs, expr]).$;
-    console.log('d', d, [...contextExprs, expr])
+        copiedElements.forEach((copiedElement, i) => {
+          const base = copiedElements[i - 1] ?? element;
+          element.parentElement?.insertBefore(copiedElement, base.nextSibling);
+        });
 
-    const copiedElements = (Array.isArray(d) ? d : []).map((_, i) => {
-      const copiedElement = templateElement.content.cloneNode(true) as Element;
-      return copiedElement;
+        copiedElements.forEach(copied => render(copied));
+      }
     });
-
-    element.replaceWith(templateElement, ...copiedElements);
-
-    [...(templateElement.parentElement?.querySelectorAll(':scope > *:not(template)') ?? [])].forEach((copiedElement, i) => {
-      copiedElement.setAttribute('data-b-context', `${expr}[${i}]`);
-      render(copiedElement);
-    });
-  });
 }
 
 window.addEventListener('DOMContentLoaded', () => {
