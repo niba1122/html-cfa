@@ -53,18 +53,30 @@ function extractDataByJSExpr(data: any, exprs: string[]): { $: any; $root: any }
   };
 }
 
+const ATTR_FOR_EACH = 'data-b-for-each';
+const ATTR_FOR_EACH_CLONED = 'data-b-for-each-cloned';
+const ATTR_FOR_EACH_INDEX = 'data-b-for-each-index';
+const ATTR_VALUE_OF = 'data-b-value-of';
+
+function is(element: Element, attr: string) {
+  return element.getAttribute(attr) !== null;
+}
+
+function toSelector(attrs: string[]): string {
+  return attrs.map(attr => `[${attr}]`).join(',');
+}
+
 function getContextExprs(element: Element): string[] {
   function _get(_element: Element): string[] {
-    const next = _element.parentElement?.closest<HTMLElement>('[data-b-for-each], [data-b-for-each-cloned]');
+    const next = _element.parentElement?.closest<HTMLElement>(toSelector([ATTR_FOR_EACH, ATTR_FOR_EACH_CLONED]));
     if (next) {
       let contextExpr: string | undefined;
-      if (typeof next.dataset.bForEach === 'string') {
-        const base = next.dataset.bForEach;
-        // const index = Number(next.getAttribute('data-b-index'));
+      if (is(next, ATTR_FOR_EACH)) {
+        const base = next.getAttribute(ATTR_FOR_EACH) ?? '';
         contextExpr = `${base}[0]`;
-      } else if (typeof next.dataset.bForEachCloned === 'string') {
-        const base = next.dataset.bForEachCloned;
-        const index = Number(next.getAttribute('data-b-index'));
+      } else if (is(next, ATTR_FOR_EACH_CLONED)) {
+        const base = next.getAttribute(ATTR_FOR_EACH_CLONED) ?? '';
+        const index = Number(next.getAttribute(ATTR_FOR_EACH_INDEX));
         contextExpr = `${base}[${index}]`;
       }
       if (contextExpr) {
@@ -77,21 +89,16 @@ function getContextExprs(element: Element): string[] {
 }
 
 function render(root: Element) {
-  [...root.querySelectorAll('[data-b-for-each-cloned]')].forEach((element) => element.remove());
-  [...root.querySelectorAll<HTMLElement>('[data-b-value-of], [data-b-for-each], [data-b-for-each-cloned]')]
+  [...root.querySelectorAll(toSelector([ATTR_FOR_EACH_CLONED]))].forEach((element) => element.remove());
+  [...root.querySelectorAll<HTMLElement>(toSelector([ATTR_VALUE_OF, ATTR_FOR_EACH, ATTR_FOR_EACH_CLONED]))]
     .forEach((element) => {
-      if (element.dataset.bValueOf !== undefined) {
-        const expr = element.dataset.bValueOf ?? '';
+      if (is(element, ATTR_VALUE_OF)) {
+        const expr = element.getAttribute(ATTR_VALUE_OF) ?? '';
         const contextExprs = getContextExprs(element);
-        try {
-          element.textContent = extractDataByJSExpr(data, [...contextExprs, expr]).$;
-        } catch {
-
-        }
-      } else if (element.dataset.bForEach !== undefined) {
+        element.textContent = extractDataByJSExpr(data, [...contextExprs, expr]).$;
+      } else if (is(element, ATTR_FOR_EACH)) {
         const contextExprs = getContextExprs(element);
-        const expr = element.dataset.bForEach ?? '';
-
+        const expr = element.getAttribute(ATTR_FOR_EACH) ?? '';
         const d = extractDataByJSExpr(data, [...contextExprs, expr]).$;
 
         const copiedElements = [...Array.isArray(d) ? d : []]
@@ -99,9 +106,9 @@ function render(root: Element) {
           .slice(1)
           .map(i => {
             const copiedElement = element.cloneNode(true) as HTMLElement;
-            copiedElement.setAttribute('data-b-for-each-cloned', copiedElement.dataset.bForEach ?? '')
-            delete copiedElement.dataset.bForEach;
-            copiedElement.setAttribute('data-b-index', `${i}`);
+            copiedElement.setAttribute(ATTR_FOR_EACH_CLONED, copiedElement.getAttribute(ATTR_FOR_EACH) ?? '')
+            copiedElement.removeAttribute(ATTR_FOR_EACH);
+            copiedElement.setAttribute(ATTR_FOR_EACH_INDEX, `${i}`);
             return copiedElement;
           });
 
