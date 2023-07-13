@@ -8,6 +8,10 @@
     <!-- <script src="/src/dynamic-xslt.ts"></script> -->
     <script src="/src/b-attrs.ts"></script>
     <style>
+      [data-b-if-hidden] {
+        display: none;
+      }
+
       li {
         padding: 20px;
         border: solid 1px #ccc;
@@ -44,7 +48,7 @@
       </ul>
     </h3>
     <h3>Fruits</h3>
-    <ul>
+    <ul data-b-if="$.tableGroup1.fruits.length > 2">
       <li data-b-for-each="$.tableGroup1.fruits">
         name: <span data-b-value-of="$.name"></span>
       </li>

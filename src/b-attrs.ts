@@ -65,6 +65,8 @@ const ATTR_FOR_EACH_CLONED = 'data-b-for-each-cloned';
 const ATTR_FOR_EACH_INDEX = 'data-b-for-each-index';
 const ATTR_VALUE_OF = 'data-b-value-of';
 const ATTR_ATTR_VALUES = 'data-b-attr-values';
+const ATTR_IF = 'data-b-if';
+const ATTR_IF_HIDDEN = 'data-b-if-hidden';
 
 function is(element: Element, attr: string) {
   return element.getAttribute(attr) !== null;
@@ -99,7 +101,7 @@ function getContextExprs(element: Element): string[] {
 function render(root: Element) {
   [...root.querySelectorAll(toSelector([ATTR_FOR_EACH_CLONED]))].forEach((element) => element.remove());
   let createdElements: Element[] = [];
-  [...root.querySelectorAll<HTMLElement>(toSelector([ATTR_VALUE_OF, ATTR_FOR_EACH, ATTR_FOR_EACH_CLONED, ATTR_ATTR_VALUES]))]
+  [...root.querySelectorAll<HTMLElement>(toSelector([ATTR_VALUE_OF, ATTR_FOR_EACH, ATTR_FOR_EACH_CLONED, ATTR_ATTR_VALUES, ATTR_IF]))]
     .forEach((element) => {
       if (is(element, ATTR_VALUE_OF)) {
         const expr = element.getAttribute(ATTR_VALUE_OF) ?? '';
@@ -114,6 +116,15 @@ function render(root: Element) {
             .forEach(([attr, value]) => {
               element.setAttribute(attr, value);
             });
+        }
+      } else if (is(element, ATTR_IF)) {
+        const expr = element.getAttribute(ATTR_IF) ?? '';
+        const contextExprs = getContextExprs(element);
+        const result = !!extractDataByJSExpr(data, [...contextExprs, expr]).$;
+        if (result) {
+          element.removeAttribute(ATTR_IF_HIDDEN);
+        } else {
+          element.setAttribute(ATTR_IF_HIDDEN, '');
         }
       } else if (is(element, ATTR_FOR_EACH)) {
         const contextExprs = getContextExprs(element);
