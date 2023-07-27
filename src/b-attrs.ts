@@ -71,10 +71,14 @@ function render(root: Element) {
           const expr = element.getAttribute(ATTR_ATTRIBUTES) ?? '';
           const contextExprs = getContextExprs(element);
           const attrValues = extractDataByJSExpr(data, [...contextExprs, expr]).$;
-          if (typeof attrValues === 'object' && !Array.isArray(attrValues)) {
+          if (typeof attrValues === 'object' && !Array.isArray(attrValues) && attrValues !== null) {
             Object.entries(attrValues as Record<string, any>)
               .forEach(([attr, value]) => {
-                element.setAttribute(attr, value);
+                if (value === null || value === undefined) {
+                  element.removeAttribute(attr);
+                } else {
+                  element.setAttribute(attr, value);
+                }
               });
           }
         } else if (is(element, ATTR_IF)) {
