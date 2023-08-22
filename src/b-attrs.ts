@@ -26,6 +26,7 @@ const ATTR_IF__HIDDEN = 'data-b-if_hidden';
 
 const EVENT_RENDERED = 'b:rendered'
 const EVENT_SET_DATA = 'b:set-data'
+const EVENT_RENDER = 'b:render'
 
 function is(element: Element, attr: string) {
   return element.getAttribute(attr) !== null;
@@ -127,5 +128,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener(EVENT_SET_DATA as string, (event: any) => {
   data = event.detail.data;
+  render(document.body);
+});
+
+window.addEventListener(EVENT_RENDER as string, () => {
   render(document.body);
 });
